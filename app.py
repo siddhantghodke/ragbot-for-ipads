@@ -53,8 +53,8 @@ if prompt:
         full_response = ""
         
         for chunk in ask_query(prompt, retriever, st.session_state.chat_history):
-            if "answer" in chunk:
-                full_response += chunk["answer"]
+            if hasattr(chunk, 'content'):
+                full_response += chunk.content
                 message_placeholder.markdown(full_response + "▌")
         
         message_placeholder.markdown(full_response)

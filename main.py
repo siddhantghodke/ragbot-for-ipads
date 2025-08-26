@@ -36,6 +36,13 @@ def ask_query(query, retriever, chat_history=[]):
                         streaming=True
                     )
 
+    # Get relevant documents
+    docs = retriever.invoke(query)
+    context = "\n\n".join([doc.page_content for doc in docs])
+    
+    # Format chat history
+    chat_history_str = str(chat_history[-3:]) if chat_history else "No previous conversation"
+    
     system_prompt = """You are an expert on Apple iPads with comprehensive knowledge from Wikipedia and structured specifications.
 Use the following pieces of retrieved context to answer the question accurately.
 If you don't know the answer based on the provided context, say that you don't know.
@@ -54,14 +61,13 @@ When answering questions about specific iPad models, use the structured informat
 
 Always mention the latest models and their key specifications when relevant.
 
-Consider the conversation history to provide contextually relevant and coherent responses. If the user is asking follow-up questions, reference previous parts of the conversation appropriately."""
+Also access the chat history to provide contextually relevant and coherent responses. If the user is asking follow-up questions, reference previous parts of the conversation appropriately."""
 
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", system_prompt),
-        ("human", "Context: {context}\n\nChat History: {chat_history}\n\nCurrent Question: {input}"),
-    ])
-    
-    question_answer_chain = create_stuff_documents_chain(llm, prompt)
-    rag_chain = create_retrieval_chain(retriever, question_answer_chain)
+    # Create messages for the chat model
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": f"Context: {context}\n\nChat History: {chat_history_str}\n\nQuestion: {query}"}
+    ]
 
-    return rag_chain.stream({"input": query, "chat_history": str(chat_history[-3:]) if chat_history else "No previous conversation"})
+    # Stream the response directly from the LLM
+    return llm.stream(messages)

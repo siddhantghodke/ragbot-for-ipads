@@ -10,6 +10,7 @@ from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import ChatPromptTemplate
 import streamlit as st
 from langchain_community.vectorstores import FAISS
+from langchain_core.messages import SystemMessage, HumanMessage
 
 from dotenv import load_dotenv
 load_dotenv() 
@@ -63,10 +64,10 @@ Always mention the latest models and their key specifications when relevant.
 
 Also access the chat history to provide contextually relevant and coherent responses. If the user is asking follow-up questions, reference previous parts of the conversation appropriately."""
 
-    # Create messages for the chat model
+    # Create messages for the chat model using proper message objects
     messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": f"Context: {context}\n\nChat History: {chat_history_str}\n\nQuestion: {query}"}
+        SystemMessage(content=system_prompt),
+        HumanMessage(content=f"Context: {context}\n\nChat History: {chat_history_str}\n\nQuestion: {query}")
     ]
 
     # Stream the response directly from the LLM

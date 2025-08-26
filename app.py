@@ -47,14 +47,17 @@ prompt = st.chat_input("Ask about iPads…")
 if prompt:
     with st.chat_message("user"):
         st.write(prompt)
-    with st.spinner("Generating answer…"):
-        try:
-            answer, sources = ask_query(prompt, retriever, st.session_state.chat_history)
-        except Exception as e:
-            with st.chat_message("assistant"):
-                st.error(f"Error: {e}")
-        else:
-            st.session_state.chat_history.append((prompt, answer))
-            with st.chat_message("assistant"):
-                st.write(answer)
+    
+    with st.chat_message("assistant"):
+        message_placeholder = st.empty()
+        full_response = ""
+        
+        for chunk in ask_query(prompt, retriever, st.session_state.chat_history):
+            if "answer" in chunk:
+                full_response += chunk["answer"]
+                message_placeholder.markdown(full_response + "▌")
+        
+        message_placeholder.markdown(full_response)
+    
+    st.session_state.chat_history.append((prompt, full_response))
 

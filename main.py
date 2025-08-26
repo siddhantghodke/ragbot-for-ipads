@@ -32,7 +32,8 @@ def ask_query(query, retriever, chat_history=[]):
                         model="gemini-2.5-flash", 
                         temperature=0.3, 
                         max_tokens=1000,
-                        google_api_key=api_key
+                        google_api_key=api_key,
+                        streaming=True
                     )
 
     system_prompt = """You are an expert on Apple iPads with comprehensive knowledge from Wikipedia and structured specifications.
@@ -51,18 +52,16 @@ When answering questions about specific iPad models, use the structured informat
 - iPad (11th gen): Latest model with A16 Bionic chip, Liquid Retina display, price 69,990 INR
 - iPad mini (A17 Pro): Latest model with A17 Pro chip, compact 8.3-inch design, price 59,990 INR
 
-Always mention the latest models and their key specifications when relevant."""
+Always mention the latest models and their key specifications when relevant.
+
+Consider the conversation history to provide contextually relevant and coherent responses. If the user is asking follow-up questions, reference previous parts of the conversation appropriately."""
 
     prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt),
-        ("human", "Context: {context}\n\nQuestion: {input}"),
+        ("human", "Context: {context}\n\nChat History: {chat_history}\n\nCurrent Question: {input}"),
     ])
     
     question_answer_chain = create_stuff_documents_chain(llm, prompt)
     rag_chain = create_retrieval_chain(retriever, question_answer_chain)
 
-    result = rag_chain.invoke({"input": query})
-    answer = result["answer"]
-    sources = result.get("source_documents", [])
-
-    return answer, sources
+    return rag_chain.stream({"input": query, "chat_history": str(chat_history[-3:]) if chat_history else "No previous conversation"})
